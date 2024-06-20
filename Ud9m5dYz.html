@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VanKek moon maths</title>
+    <style type="text/css">
+        .calculator-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .inputs {
+            width: 40%;
+            margin-right: 20px;
+        }
+
+        .outputs {
+            width: 30%;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .background-image {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 50%;
+            height: 50%;
+            background-size: cover;
+            background-position: top center;
+            z-index: -1; /* put it behind the calculator */
+        }
+
+        /* add some fun flair with a random background image on load */
+        .background-image {
+            background-image: url('images/background-0.jpg'); /* default image */
+        }
+
+        label {
+            display: block;
+            margin: 10px 0;
+        }
+
+        input[type="number"], input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>VanKek investment calculator</h1>
+    <div class="calculator-container">
+        <div class="inputs">
+            <label for="memecoins-held">Your VanKek holdings (<span id="current-value"></span>)</label>
+            <input type="range" id="memecoins-held" value="250000000" min="10000000" max="8000000000" value="200000000" step="10000000">
+
+            <label for="expected-value">Future marketcap (<span id="expected-label"></span>)</label>
+            <input type="range" id="expected-value" min="1" max="10" value="2" step="1">
+
+            <div class="outputs">
+                <p>Your bags: <span id="output-1">$0.00</span></p>
+                <p>ROI: <span id="output-2">0.00%</span></p>
+            </div>
+        </div>
+        <div class="background-image" id="background-image"></div>
+    </div>
+    <script>
+        const marketCapSteps = {
+            1: { label: 'Ferrari 488 GTB', value: 200000 },
+            2: { label: 'A food truck', value: 500000 },
+            3: { label: 'A shoebox in San Fran', value: 1000000 },
+            4: { label: 'A private island', value: 50000000},
+            5: { label: 'The Burj Khalifa', value: 1500000000 },
+            6: { label: 'The entire city of Las Vegas', value: 20000000000 },
+            7: { label: 'The entire country of Iceland', value: 450000000000 },
+            8: { label: 'The Facebook company', value: 850000000000 },
+            9: { label: 'The entire state of California', value: 3000000000000 },
+            10: { label: 'The entire US national debt', value: 10000000000000 }
+        };
+
+        // Populate background images array
+        const backgroundImageUrls = [];
+        for (let i = 1; i < 11; i++) {
+            backgroundImageUrls.push(`images/background-${i}.jpg`);
+        }
+
+        // Calculator inputs
+        let memecoinValue = 0.0000005030;
+        const memecoinsHeldInput = document.getElementById('memecoins-held');
+        const expectedValueInput = document.getElementById('expected-value');
+        const output1Element = document.getElementById('output-1');
+        const output2Element = document.getElementById('output-2');
+        const backgroundImageElement = document.getElementById('background-image');
+        const coinCount = 420690000000
+
+        function calculateOutputs() {
+            const memecoinsHeld = parseFloat(memecoinsHeldInput.value);
+            const expectedValue = marketCapSteps[expectedValueInput.value].value / coinCount;
+
+            const valueAtExpectedValuation = memecoinsHeld * expectedValue;
+            const roiAtExpectedValuation = (expectedValue - memecoinValue) / memecoinValue;
+
+            output1Element.textContent = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+            }).format(valueAtExpectedValuation);
+        
+            output2Element.textContent = new Intl.NumberFormat('en-US', {
+                style: 'percent',
+                minimumFractionDigits: 2,
+            }).format(roiAtExpectedValuation);
+
+            backgroundImageElement.style.backgroundImage = `url('${backgroundImageUrls[expectedValueInput.value - 1]}')`;
+        }
+
+        function updateExistingWorth() {
+            let existingWorth = parseFloat(memecoinValue) * parseFloat(memecoinsHeldInput.value);
+            existingWorth = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+            }).format(existingWorth);
+            let holdingsSimple = new Intl.NumberFormat('en-US', {
+                style: 'decimal'
+            }).format(parseFloat(memecoinsHeldInput.value));
+            document.querySelector('#current-value').textContent = `${holdingsSimple} or ${existingWorth}`
+        }
+
+        function updateMarketCap() {
+            let marketCap = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0,
+            }).format(marketCapSteps[expectedValueInput.value].value);
+
+            document.querySelector('#expected-label').textContent = `${marketCapSteps[expectedValueInput.value].label} ${marketCap}`;
+        }
+
+        // Set the starting price to something realistic but positive
+        function setStartingMarketCap(price) {
+            let currentMarketCap = price * coinCount;
+            for (let i = 1; i < 10; i++) {
+                console.log(marketCapSteps[i].value, currentMarketCap);
+                if (currentMarketCap < marketCapSteps[i].value) {
+                    expectedValueInput.value = i - 1;
+                    break;
+                }
+            }
+        }
+
+
+        // Fetch prices and update UI
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', 'https://api.dexscreener.com/latest/dex/pairs/ethereum/0x4131031400789a5cbeec760079fda209e7da8926', true);
+
+        xhr.onload = function() {
+            if (200 === xhr.status) {
+                const response = JSON.parse(xhr.responseText);
+                memecoinValue = parseFloat(response.pairs[0].priceUsd);
+                updateExistingWorth();
+                setStartingMarketCap(memecoinValue);
+                calculateOutputs();
+                updateMarketCap();
+            }
+        };
+        xhr.send();
+
+        // Attach listeners
+        memecoinsHeldInput.addEventListener('input', calculateOutputs);
+        memecoinsHeldInput.addEventListener('input', updateExistingWorth);
+        expectedValueInput.addEventListener('input', calculateOutputs);
+        expectedValueInput.addEventListener('input', updateMarketCap);
+
+    </script>
+</body>
+</html>
