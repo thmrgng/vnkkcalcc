@@ -45,6 +45,21 @@
             min-height: 100vh;
         }
 
+        @media screen and (max-width: 640px) {
+	    .background-image {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            width: 50%;
+            background-size: cover;
+            background-position: top center;
+            z-index: -1; /* put it behind the calculator */
+            background-repeat: no-repeat;
+            background-size: 100% 100%;
+            min-height: 33vh;
+            }
+        }
+
         /* add some fun flair with a random background image on load */
         .background-image {
             background-image: url('images/background-0.jpg'); /* default image */
